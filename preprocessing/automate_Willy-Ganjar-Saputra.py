@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 import nltk
+import unicodedata
 
 from nltk.corpus import stopwords
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
@@ -24,6 +25,7 @@ def create_sentiment_label(score):
 def cleaning_text(text) :
     text = str(text)
 
+    text = unicodedata.normalize("NFKD", text)
     text = re.sub(r'http\S+|www\S+', '', text)
     text = re.sub(r'@\w+', '', text)
     text = re.sub(r'#\w+', '', text)
