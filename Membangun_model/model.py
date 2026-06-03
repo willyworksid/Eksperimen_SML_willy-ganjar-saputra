@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 import mlflow
 import mlflow.sklearn
 
+from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
@@ -32,17 +33,12 @@ print("Kata muncul 2 dokumen :", (freq == 2).sum())
 print("Kata muncul 3 dokumen :", (freq == 3).sum())
 print("Total vocabulary :", len(freq))
 
-tfidf = TfidfVectorizer(
-    max_features=5000,
-    min_df=2
-)
 
-x = tfidf.fit_transform(df['text_final'])
+x = df['text_final']
 y = df['sentiment']
 
 print(x.shape)
 
-print(tfidf.get_feature_names_out()[:50])
 
 x_train, x_test, y_train, y_test = train_test_split(
     x,
@@ -72,10 +68,23 @@ y_test = y_test.values
 
 with mlflow.start_run():
 
-  model = LogisticRegression(
-    max_iter=1000,
-    random_state=42
-  )
+  model = Pipeline([
+    (
+        'tfidf',
+        TfidfVectorizer(
+            max_features=5000,
+            min_df=2
+        )
+    ),
+    (
+        'logreg',
+        LogisticRegression(
+            max_iter=1000,
+            random_state=42,
+            class_weight='balanced'
+        )
+    )
+  ])
 
   model.fit(x_train,y_train)
 
@@ -85,7 +94,7 @@ with mlflow.start_run():
     y_test,
     y_pred
   )
-
+  
   print(
     "Accuracy:",
     accuracy
@@ -97,3 +106,10 @@ with mlflow.start_run():
         y_pred
     )
   )
+
+  mlflow.sklearn.log_model(
+        sk_model=model,
+        name="model"
+    )
+
+  print("Model berhasil disimpan ke MLflow")
